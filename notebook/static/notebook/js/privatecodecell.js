@@ -3,9 +3,9 @@
 /**
  *
  *
- * @module codecell
- * @namespace codecell
- * @class CodeCell
+ * @module PrivateCodeCell
+ * @namespace PrivateCodeCell
+ * @class PrivateCodeCell
  */
 
 
@@ -76,11 +76,11 @@ define([
 
     var keycodes = keyboard.keycodes;
 
-    var CodeCell = function (kernel, options) {
+    var PrivateCodeCell = function (kernel, options) {
         /**
          * Constructor
          *
-         * A Cell conceived to write code.
+         * A Cell conceived to write code, but limit the access to private data.
          *
          * Parameters:
          *  kernel: Kernel instance
@@ -101,7 +101,7 @@ define([
         this.tooltip = options.tooltip;
         this.config = options.config;
         this.class_config = new configmod.ConfigWithDefaults(this.config,
-                                        CodeCell.options_default, 'CodeCell');
+                                        PrivateCodeCell.options_default, 'CodeCell');
 
         // create all attributed in constructor function
         // even if null for V8 VM optimisation
@@ -118,15 +118,14 @@ define([
             events: this.events}]);
 
         // Attributes we want to override in this subclass.
-        this.is_private = false;
-        this.cell_type = "code";
+        this.cell_type = "private";
         var that  = this;
         this.element.focusout(
             function() { that.auto_highlight(); }
         );
     };
 
-    CodeCell.options_default = {
+    PrivateCodeCell.options_default = {
         cm_config : {
             extraKeys: {
                 "Backspace" : "delSpaceToPrevTabStop",
@@ -147,12 +146,12 @@ define([
         },
     };
 
-    CodeCell.msg_cells = {};
+    PrivateCodeCell.msg_cells = {};
 
-    CodeCell.prototype = Object.create(Cell.prototype);
+    PrivateCodeCell.prototype = Object.create(Cell.prototype);
     
     /** @method create_element */
-    CodeCell.prototype.create_element = function () {
+    PrivateCodeCell.prototype.create_element = function () {
         Cell.prototype.create_element.apply(this, arguments);
         var that = this;
 
@@ -165,7 +164,7 @@ define([
         var prompt_container = $('<div/>').addClass('prompt_container');
 
         var run_this_cell = $('<div></div>').addClass('run_this_cell');
-        run_this_cell.prop('title', 'Run this cell');
+        run_this_cell.prop('title', 'You Cannot Run this cell');
         run_this_cell.append('<i class="fa-step-forward fa"></i>');
         run_this_cell.click(function (event) {
             event.stopImmediatePropagation();
@@ -179,7 +178,7 @@ define([
             cell: this, 
             notebook: this.notebook});
         inner_cell.append(this.celltoolbar.element);
-        var input_area = $('<div/>').addClass('input_area');
+        var input_area = $('<div/>').addClass('private_input_area');
         this.code_mirror = new CodeMirror(input_area.get(0), this._options.cm_config);
         // In case of bugs that put the keyboard manager into an inconsistent state,
         // ensure KM is enabled when CodeMirror is focused:
@@ -210,7 +209,7 @@ define([
     };
 
     /** @method bind_events */
-    CodeCell.prototype.bind_events = function () {
+    PrivateCodeCell.prototype.bind_events = function () {
         Cell.prototype.bind_events.apply(this, arguments);
         var that = this;
 
@@ -234,7 +233,7 @@ define([
      *  @method handle_codemirror_keyevent
      */
 
-    CodeCell.prototype.handle_codemirror_keyevent = function (editor, event) {
+    PrivateCodeCell.prototype.handle_codemirror_keyevent = function (editor, event) {
 
         var that = this;
         // whatever key is pressed, first, cancel the tooltip request before
@@ -317,7 +316,7 @@ define([
 
     // Kernel related calls.
 
-    CodeCell.prototype.set_kernel = function (kernel) {
+    PrivateCodeCell.prototype.set_kernel = function (kernel) {
         this.kernel = kernel;
     };
 
@@ -325,7 +324,7 @@ define([
      * Execute current code cell to the kernel
      * @method execute
      */
-    CodeCell.prototype.execute = function (stop_on_error) {
+    PrivateCodeCell.prototype.execute = function (stop_on_error) {
         if (!this.kernel) {
             console.log(i18n.msg._("Can't execute cell since kernel is not set."));
             return;
@@ -348,7 +347,7 @@ define([
         var old_msg_id = this.last_msg_id;
         if (old_msg_id) {
             this.kernel.clear_callbacks_for_msg(old_msg_id);
-            delete CodeCell.msg_cells[old_msg_id];
+            delete PrivateCodeCell.msg_cells[old_msg_id];
             this.last_msg_id = null;
         }
         if (this.get_text().trim().length === 0) {
@@ -362,13 +361,13 @@ define([
         
         this.last_msg_id = this.kernel.execute(this.get_text(), callbacks, {silent: false, store_history: true,
             stop_on_error : stop_on_error});
-        CodeCell.msg_cells[this.last_msg_id] = this;
+        PrivateCodeCell.msg_cells[this.last_msg_id] = this;
         this.render();
-        this.events.trigger('execute.CodeCell', {cell: this});
+        this.events.trigger('execute.PrivateCodeCell', {cell: this});
         var that = this;
         function handleFinished(evt, data) {
             if (that.kernel.id === data.kernel.id && that.last_msg_id === data.msg_id) {
-                    that.events.trigger('finished_execute.CodeCell', {cell: that});
+                    that.events.trigger('finished_execute.PrivateCodeCell', {cell: that});
                 that.events.off('finished_iopub.Kernel', handleFinished);
               }
         }
@@ -379,7 +378,7 @@ define([
      * Construct the default callbacks for
      * @method get_callbacks
      */
-    CodeCell.prototype.get_callbacks = function () {
+    PrivateCodeCell.prototype.get_callbacks = function () {
         var that = this;
         return {
             clear_on_done: false,
@@ -404,7 +403,7 @@ define([
         };
     };
     
-    CodeCell.prototype._open_with_pager = function (payload) {
+    PrivateCodeCell.prototype._open_with_pager = function (payload) {
         this.events.trigger('open_with_text.Pager', payload);
     };
 
@@ -412,7 +411,7 @@ define([
      * @method _handle_execute_reply
      * @private
      */
-    CodeCell.prototype._handle_execute_reply = function (msg) {
+    PrivateCodeCell.prototype._handle_execute_reply = function (msg) {
         this.set_input_prompt(msg.content.execution_count);
         this.element.removeClass("running");
         this.events.trigger('set_dirty.Notebook', {value: true});
@@ -422,7 +421,7 @@ define([
      * @method _handle_set_next_input
      * @private
      */
-    CodeCell.prototype._handle_set_next_input = function (payload) {
+    PrivateCodeCell.prototype._handle_set_next_input = function (payload) {
         var data = {
             cell: this,
             text: payload.text,
@@ -436,14 +435,14 @@ define([
      * @method _handle_input_request
      * @private
      */
-    CodeCell.prototype._handle_input_request = function (msg) {
+    PrivateCodeCell.prototype._handle_input_request = function (msg) {
         this.output_area.append_raw_input(msg);
     };
 
 
     // Basic cell manipulation.
 
-    CodeCell.prototype.select = function () {
+    PrivateCodeCell.prototype.select = function () {
         var cont = Cell.prototype.select.apply(this, arguments);
         if (cont) {
             this.code_mirror.refresh();
@@ -452,13 +451,13 @@ define([
         return cont;
     };
 
-    CodeCell.prototype.render = function () {
+    PrivateCodeCell.prototype.render = function () {
         var cont = Cell.prototype.render.apply(this, arguments);
         // Always execute, even if we are already in the rendered state
         return cont;
     };
     
-    CodeCell.prototype.select_all = function () {
+    PrivateCodeCell.prototype.select_all = function () {
         var start = {line: 0, ch: 0};
         var nlines = this.code_mirror.lineCount();
         var last_line = this.code_mirror.getLine(nlines-1);
@@ -467,31 +466,31 @@ define([
     };
 
 
-    CodeCell.prototype.collapse_output = function () {
+    PrivateCodeCell.prototype.collapse_output = function () {
         this.output_area.collapse();
     };
 
 
-    CodeCell.prototype.expand_output = function () {
+    PrivateCodeCell.prototype.expand_output = function () {
         this.output_area.expand();
         this.output_area.unscroll_area();
     };
 
-    CodeCell.prototype.scroll_output = function () {
+    PrivateCodeCell.prototype.scroll_output = function () {
         this.output_area.expand();
         this.output_area.scroll_if_long();
     };
 
-    CodeCell.prototype.toggle_output = function () {
+    PrivateCodeCell.prototype.toggle_output = function () {
         this.output_area.toggle_output();
     };
 
-    CodeCell.prototype.toggle_output_scroll = function () {
+    PrivateCodeCell.prototype.toggle_output_scroll = function () {
         this.output_area.toggle_scroll();
     };
 
 
-    CodeCell.input_prompt_classical = function (prompt_value, lines_number) {
+    PrivateCodeCell.input_prompt_classical = function (prompt_value, lines_number) {
         var ns;
         if (prompt_value === undefined || prompt_value === null) {
             ns = "&nbsp;";
@@ -501,7 +500,7 @@ define([
         return '<bdi>'+i18n.msg._('In')+'</bdi>&nbsp;[' + ns + ']:';
     };
 
-    CodeCell.input_prompt_continuation = function (prompt_value, lines_number) {
+    PrivateCodeCell.input_prompt_continuation = function (prompt_value, lines_number) {
         var html = [CodeCell.input_prompt_classical(prompt_value, lines_number)];
         for(var i=1; i < lines_number; i++) {
             html.push(['...:']);
@@ -509,16 +508,16 @@ define([
         return html.join('<br/>');
     };
 
-    CodeCell.input_prompt_function = CodeCell.input_prompt_classical;
+    PrivateCodeCell.input_prompt_function = PrivateCodeCell.input_prompt_classical;
 
 
-    CodeCell.prototype.set_input_prompt = function (number) {
+    PrivateCodeCell.prototype.set_input_prompt = function (number) {
         var nline = 1;
         if (this.code_mirror !== undefined) {
            nline = this.code_mirror.lineCount();
         }
         this.input_prompt_number = number;
-        var prompt_html = CodeCell.input_prompt_function(this.input_prompt_number, nline);
+        var prompt_html = PrivateCodeCell.input_prompt_function(this.input_prompt_number, nline);
 
         // This HTML call is okay because the user contents are escaped.
         this.element.find('div.input_prompt').html(prompt_html);
@@ -526,22 +525,22 @@ define([
     };
 
 
-    CodeCell.prototype.clear_input = function () {
+    PrivateCodeCell.prototype.clear_input = function () {
         this.code_mirror.setValue('');
     };
 
 
-    CodeCell.prototype.get_text = function () {
+    PrivateCodeCell.prototype.get_text = function () {
         return this.code_mirror.getValue();
     };
 
 
-    CodeCell.prototype.set_text = function (code) {
+    PrivateCodeCell.prototype.set_text = function (code) {
         return this.code_mirror.setValue(code);
     };
 
 
-    CodeCell.prototype.clear_output = function (wait, ignore_queue) {
+    PrivateCodeCell.prototype.clear_output = function (wait, ignore_queue) {
         this.events.trigger('clear_output.CodeCell', {cell: this});
         this.output_area.clear_output(wait, ignore_queue);
         this.set_input_prompt();
@@ -550,7 +549,7 @@ define([
 
     // JSON serialization
 
-    CodeCell.prototype.fromJSON = function (data) {
+    PrivateCodeCell.prototype.fromJSON = function (data) {
         Cell.prototype.fromJSON.apply(this, arguments);
         if (data.cell_type === 'code') {
             if (data.source !== undefined) {
@@ -567,7 +566,7 @@ define([
     };
 
 
-    CodeCell.prototype.toJSON = function () {
+    PrivateCodeCell.prototype.toJSON = function () {
         var data = Cell.prototype.toJSON.apply(this);
         data.source = this.get_text();
         // is finite protect against undefined and '*' value
@@ -597,7 +596,7 @@ define([
      * @method unselect
      * @return is the action being taken
      */
-    CodeCell.prototype.unselect = function() {
+    PrivateCodeCell.prototype.unselect = function() {
         var cont = Cell.prototype.unselect.apply(this, arguments);
         if (cont) {
             // When a code cell is unselected, make sure that the corresponding
@@ -610,16 +609,8 @@ define([
         return cont;
     };
 
-    var PrivateCodeCell = function(kernel, options) {
+    // Backwards compatability. Probably doesn't apply
+    IPython.PrivateCodeCell = PrivateCodeCell;
 
-        CodeCell.call(this, kernel, options);
-        this.is_private = true
-    };
-
-    PrivateCodeCell.prototype = Object.create(CodeCell.prototype);
-
-    // Backwards compatability.
-    IPython.CodeCell = CodeCell;
-
-    return {'CodeCell': CodeCell};
+    return {'PrivateCodeCell': PrivateCodeCell};
 });

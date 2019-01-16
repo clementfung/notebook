@@ -347,12 +347,12 @@ class ContentsManager(LoggingConfigurable):
 
     def validate_notebook_model(self, model):
         """Add failed-validation message to model"""
-        try:
-            validate_nb(model['content'])
-        except ValidationError as e:
-            model['message'] = u'Notebook validation failed: {}:\n{}'.format(
-                e.message, json.dumps(e.instance, indent=1, default=lambda obj: '<UNKNOWN>'),
-            )
+        # try:
+        #     validate_nb(model['content'])
+        # except ValidationError as e:
+        #     model['message'] = u'Notebook validation failed: {}:\n{}'.format(
+        #         e.message, json.dumps(e.instance, indent=1, default=lambda obj: '<UNKNOWN>'),
+        #     )
         return model
     
     def new_untitled(self, path='', type='', ext=''):

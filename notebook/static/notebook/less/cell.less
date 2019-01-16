@@ -122,6 +122,14 @@ div.input_area {
     line-height: @code_line_height;
 }
 
+// Change the colour of private cells, makes it easy to see for now
+div.private_input_area {
+    border: 1px solid @light_border_color;
+    .corner-all;
+    background: #FFB0B0;
+    line-height: @code_line_height;
+}
+
 /* This is needed so that empty prompt areas can collapse to zero height when there
    is no content in the output_subarea and the prompt. The main purpose of this is
    to make sure that empty JavaScript output_subareas have no height. */

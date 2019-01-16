@@ -15,6 +15,7 @@ define([
     './cell',
     './textcell',
     './codecell',
+    './privatecodecell',
     'moment',
     'services/config',
     'services/sessions/session',
@@ -43,6 +44,7 @@ define([
     cellmod,
     textcell,
     codecell,
+    privatecodecell,
     moment,
     configmod,
     session,
@@ -1303,6 +1305,11 @@ define([
                 break;
             case 'raw':
                 cell = new textcell.RawCell(cell_options);
+                break;
+            // THIS WAS ADDED BY ME
+            case 'private':
+                cell = new privatecodecell.PrivateCodeCell(this.kernel, cell_options);
+                cell.set_input_prompt();
                 break;
             default:
                 console.log("Unrecognized cell type: ", type, cellmod);
