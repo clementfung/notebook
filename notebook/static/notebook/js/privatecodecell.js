@@ -551,7 +551,7 @@ define([
 
     PrivateCodeCell.prototype.fromJSON = function (data) {
         Cell.prototype.fromJSON.apply(this, arguments);
-        if (data.cell_type === 'code') {
+        if (data.cell_type === 'private') {
             if (data.source !== undefined) {
                 this.set_text(data.source);
                 // make this value the starting point, so that we can only undo

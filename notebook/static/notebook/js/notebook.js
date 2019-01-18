@@ -1425,16 +1425,31 @@ define([
     };
 
     /**
-     * Turn a cell into a code cell.
+     * Turn one or more cells into private.
+     *
+     * @param {Array} indices - cell indices to convert
+     */
+    Notebook.prototype.cells_to_private = function (indices) {
+        if (indices === undefined){
+            indices = this.get_selected_cells_indices();
+        }
+        
+        for (var i=0; i <indices.length; i++){
+            this.to_private(indices[i]);
+        }
+    };
+
+    /**
+     * Turn a cell into a private code cell.
      * 
      * @param {integer} [index] - cell index
      */
-    Notebook.prototype.to_code = function (index) {
+    Notebook.prototype.to_private = function (index) {
         var i = this.index_or_selected(index);
         if (this.is_valid_cell_index(i)) {
             var source_cell = this.get_cell(i);
             if (!(source_cell instanceof codecell.CodeCell) && source_cell.is_editable()) {
-                var target_cell = this.insert_cell_below('code',i);
+                var target_cell = this.insert_cell_below('private',i);
                 var text = source_cell.get_text();
                 if (text === source_cell.placeholder) {
                     text = '';
@@ -1445,7 +1460,7 @@ define([
                 // cell is turned back into markdown)
                 target_cell.attachments = source_cell.attachments;
 
-                target_cell.set_text(text);
+                target_cell.set_text("# THIS IS A PRIVATE CELL\n" + text);
                 // make this value the starting point, so that we can only undo
                 // to this state, instead of a blank cell
                 target_cell.code_mirror.clearHistory();
@@ -2167,7 +2182,7 @@ define([
         this.codemirror_mode = newmode;
         codecell.CodeCell.options_default.cm_config.mode = newmode;
         this.get_cells().map(function(cell) {
-            if (cell.cell_type === 'code'){
+            if (cell.cell_type === 'code' || cell.cell_type === 'private'){
                 cell.code_mirror.setOption('mode', spec);
                 // This is currently redundant, because cm_config ends up as
                 // codemirror's own .options object, but I don't want to
@@ -2822,7 +2837,7 @@ define([
         this.last_modified = new Date(data.last_modified);
         // debug 484
         this._last_modified = 'save-success:'+data.last_modified;
-        if (data.message) {
+        /*if (data.message) {
             // save succeeded, but validation failed.
             var body = $("<div>");
             var title = i18n.msg._("Notebook validation failed");
@@ -2845,7 +2860,7 @@ define([
                     }
                 }
             });
-        }
+        }*/
         this.events.trigger('notebook_saved.Notebook');
         this._update_autosave_interval(start);
         if (this._checkpoint_after_save) {
@@ -3139,7 +3154,7 @@ define([
                 title = i18n.msg._("Notebook validation failed");
             }
 
-            if (data.message) {
+            /*if (data.message) {
                 if (failed) {
                     msg = i18n.msg._("The notebook also failed validation:");
                 } else {
@@ -3151,7 +3166,7 @@ define([
                 )).append($("<div>").addClass("validation-error").append(
                     $("<pre>").text(data.message)
                 ));
-            }
+            }*/
 
             dialog.modal({
                 notebook: this,

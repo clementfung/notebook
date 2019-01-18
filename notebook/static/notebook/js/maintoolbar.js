@@ -78,6 +78,7 @@ define([
             .append($('<option/>').attr('value','markdown').text(i18n.msg._('Markdown')))
             .append($('<option/>').attr('value','raw').text(i18n.msg._('Raw NBConvert')))
             .append($('<option/>').attr('value','heading').text(i18n.msg._('Heading')))
+            .append($('<option/>').attr('value','private').text(i18n.msg._('Private')))
             .append(multiselect);
         this.notebook.keyboard_manager.register_events(sel);
         this.events.on('selected_cell_type_changed.Notebook', function (event, data) {
@@ -102,6 +103,9 @@ define([
         sel.change(function () {
             var cell_type = $(this).val();
             switch (cell_type) {
+            case 'private':
+                that.notebook.cells_to_private();
+                break;
             case 'code':
                 that.notebook.cells_to_code();
                 break;
